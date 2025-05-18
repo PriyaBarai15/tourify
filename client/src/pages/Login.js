@@ -1,129 +1,120 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
 import {
   MDBCard,
   MDBCardBody,
+  MDBInput,
   MDBCardFooter,
   MDBValidation,
-  MDBValidationItem,
-  MDBInput,
   MDBBtn,
   MDBIcon,
   MDBSpinner,
-} from 'mdb-react-ui-kit';
-import { googleSignin, login, clearError } from '../redux/features/authSlice';
-import { useGoogleLogin } from '@react-oauth/google';
+} from "mdb-react-ui-kit";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { googleSignIn, login } from "../redux/features/authSlice";
+import { GoogleLogin } from "react-google-login";
+import { loadGapiInsideDOM } from 'gapi-script';
+const gapi = await loadGapiInsideDOM();
 
 const initialState = {
-  email: '',
-  password: '',
+  email: "",
+  password: "",
 };
 
+const clientId="704464996874-bsrg1fpdmrb741p3iftmq19e9u8jekq4.apps.googleusercontent.com"
+
 const Login = () => {
+  const [formValue, setFormValue] = useState(initialState);
+  const { loading, error } = useSelector((state) => ({ ...state.auth }));
+  const { email, password } = formValue;
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const { error, loading } = useSelector((state) => state.auth);
-
-  const [formValue, setFormValue] = useState(initialState);
-  const { email, password } = formValue;
+  //intalizing the google oauth
+  React.useEffect(() => {
+    function start() {
+     gapi.client.init({
+      clientId: clientId,
+      scope: '',
+     });
+    }
+    gapi.load('client:auth2', start);
+   }, []);
 
   useEffect(() => {
-    if (error) {
-      console.log('test');
-      toast.error(error);
-      dispatch(clearError());
-    }
-  }, [error, dispatch]);
-
-  const onInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormValue({ ...formValue, [name]: value });
-  };
+    error && toast.error(error);
+  }, [error]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (email && password) {
-      dispatch(login({ data: formValue, navigate, toast }));
+      dispatch(login({ formValue, navigate, toast }));
     }
   };
-
-  const getGoogleUserInfo = (accessToken) =>
-    axios.get(
-      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${accessToken}`
-    );
-
-  const googleSuccess = async (result) => {
-    const token = result?.access_token;
-    const profileResponse = await getGoogleUserInfo(token);
-    const { email, name } = profileResponse.data;
-    const googleId = email.substring(0, email.indexOf('@'));
-    const data = { email, name, googleId };
-    console.log('email, name, picture ', email, name);
-    dispatch(googleSignin({ data, navigate, toast }));
+  const onInputChange = (e) => {
+    let { name, value } = e.target;
+    setFormValue({ ...formValue, [name]: value });
   };
 
+
+  const devEnv = process.env.NODE_ENV !== "production";
+
+  
+
+  const googleSuccess = (resp) => {
+    console.log("Hi Success");
+    const email = resp?.profileObj?.email;
+    const name = resp?.profileObj?.name;
+    const token = resp?.tokenId;
+    const googleId = resp?.googleId;
+    const result = { email, name, token, googleId };
+    dispatch(googleSignIn({ result, navigate, toast }));
+  };
   const googleFailure = (error) => {
-    console.log('googleFailure() - error', error);
+    console.log(error)
     toast.error(error);
   };
-
-  const loginWithGoogle = useGoogleLogin({
-    onSuccess: googleSuccess,
-    onError: googleFailure,
-  });
-
   return (
     <div
       style={{
-        margin: 'auto',
-        marginTop: '120px',
-        maxWidth: '450px',
-        alignContent: 'center',
+        margin: "auto",
+        padding: "15px",
+        maxWidth: "450px",
+        alignContent: "center",
+        marginTop: "120px",
       }}
     >
-      <MDBCard alignment="center" style={{ padding: '20px 0 0 0' }}>
+      <MDBCard alignment="center">
         <MDBIcon fas icon="user-circle" className="fa-2x" />
         <h5>Sign In</h5>
-
         <MDBCardBody>
-          <MDBValidation noValidate onSubmit={handleSubmit} className="row g-3">
+          <MDBValidation onSubmit={handleSubmit} noValidate className="row g-3">
             <div className="col-md-12">
-              <MDBValidationItem invalid feedback="Please provide your email.">
-                <MDBInput
-                  required
-                  label="Email"
-                  type="email"
-                  value={email}
-                  name="email"
-                  onChange={onInputChange}
-                />
-              </MDBValidationItem>
-            </div>
-
-            <div className="col-md-12">
-              <MDBValidationItem
+              <MDBInput
+                label="Email"
+                type="email"
+                value={email}
+                name="email"
+                onChange={onInputChange}
+                required
                 invalid
-                feedback="Please provide your password."
-              >
-                <MDBInput
-                  required
-                  label="Password"
-                  type="password"
-                  value={password}
-                  name="password"
-                  validation=""
-                  onChange={onInputChange}
-                />
-              </MDBValidationItem>
+                validation="Please provide your email"
+              />
             </div>
-
+            <div className="col-md-12">
+              <MDBInput
+                label="Password"
+                type="password"
+                value={password}
+                name="password"
+                onChange={onInputChange}
+                required
+                invalid
+                validation="Please provide your password"
+              />
+            </div>
             <div className="col-12">
-              <MDBBtn style={{ width: '100%' }} className="mt-2">
+              <MDBBtn style={{ width: "100%" }} className="mt-2">
                 {loading && (
                   <MDBSpinner
                     size="sm"
@@ -136,34 +127,67 @@ const Login = () => {
               </MDBBtn>
             </div>
           </MDBValidation>
-
-          <MDBBtn
-            className="mt-2"
-            color="danger"
-            style={{ width: '100%' }}
-            onClick={loginWithGoogle}
-          >
-            <MDBIcon fab icon="google" className="me-2" />
-            Login with Google
-          </MDBBtn>
-
+          <br />
           {/* <GoogleLogin
-            className="mt-2"
-            buttonText="Login"
+            clientId="704464996874-bsrg1fpdmrb741p3iftmq19e9u8jekq4.apps.googleusercontent.com"
+            // Client ID: - 704464996874-bsrg1fpdmrb741p3iftmq19e9u8jekq4.apps.googleusercontent.com
+            // Client secrete key: - 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
+            render={(renderProps) => (
+              <MDBBtn
+                style={{ width: "100%" }}
+                color="danger"
+                onClick={renderProps.onClick}
+                disabled={renderProps.disabled}
+              >
+                <MDBIcon className="me-2" fab icon="google" /> Google Sign In
+              </MDBBtn>
+            )}
             onSuccess={googleSuccess}
             onFailure={googleFailure}
             cookiePolicy="single_host_origin"
           /> */}
+          <GoogleLoginButton/>
         </MDBCardBody>
-
         <MDBCardFooter>
           <Link to="/register">
-            <p>Don't have an account? Sign Up</p>
+            <p>Don't have an account ? Sign Up</p>
           </Link>
         </MDBCardFooter>
       </MDBCard>
     </div>
   );
 };
+
+function GoogleLoginButton() {
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const onSuccess = async (resp) => {
+    const email = resp?.profileObj?.email;
+    const name = resp?.profileObj?.name;
+    const token = resp?.tokenId;
+    const googleId = resp?.googleId;
+    const result = { email, name, token, googleId };
+    dispatch(googleSignIn({ result, navigate, toast }));
+   console.log("Login ho gaya",resp)
+  };
+  const onFailure = (res) => {
+   alert('Google Auth Failed');
+   console.log('Login falied res: ', res);
+  };
+  return (
+   <div style={{ textAlign: 'center' }}>
+    <GoogleLogin
+     clientId={clientId}
+     buttonText='Login'
+     onSuccess={onSuccess}
+     onFailure={onFailure}
+     cookiePolicy={'single_host_origin'}
+     isSignedIn={false}
+    />
+   </div>
+  );
+ }
+ 
 
 export default Login;

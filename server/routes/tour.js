@@ -1,31 +1,30 @@
-import express from 'express';
+import express from "express";
+const router = express.Router();
+import auth from "../middleware/auth.js";
+
 import {
-  getTours,
+  createTour,
+  deleteTour,
+  getRelatedTours,
   getTour,
+  getTours,
+  getToursBySearch,
   getToursByTag,
   getToursByUser,
-  getRelatedTours,
-  getAllTags,
-  createTour,
-  updateTour,
-  deleteTour,
   likeTour,
-  loadMoreTours,
-} from '../controllers/tour.js';
-import auth from '../middlewares/auth.js';
+  updateTour,
+} from "../controllers/tour.js";
 
-const router = express.Router();
+router.get("/search", getToursBySearch);
+router.get("/tag/:tag", getToursByTag);
+router.post("/relatedTours", getRelatedTours);
+router.get("/", getTours);
+router.get("/:id", getTour);
 
-router.get('/', getTours);
-router.get('/tags', getAllTags);
-router.get('/tags/:tag', getToursByTag);
-router.get('/load-more', loadMoreTours);
-router.get('/users/:_userId', auth, getToursByUser);
-router.get('/:_id', getTour);
-router.post('/', auth, createTour);
-router.post('/:_id/related-tours', getRelatedTours);
-router.put('/:_id', auth, updateTour);
-router.delete('/:_id', auth, deleteTour);
-router.put('/:_id/likes', auth, likeTour);
+router.post("/", auth, createTour);
+router.delete("/:id", auth, deleteTour);
+router.patch("/:id", auth, updateTour);
+router.get("/userTours/:id", auth, getToursByUser);
+router.patch("/like/:id", auth, likeTour);
 
 export default router;

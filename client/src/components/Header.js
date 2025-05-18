@@ -1,147 +1,112 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import jwtDecode from 'jwt-decode';
+import React, { useState } from "react";
 import {
   MDBNavbar,
   MDBContainer,
   MDBIcon,
   MDBNavbarNav,
+  MDBNavbarItem,
+  MDBNavbarLink,
   MDBNavbarToggler,
   MDBCollapse,
-  MDBNavbarItem,
-  MDBBadge,
-  MDBBtn,
-} from 'mdb-react-ui-kit';
-import { removeUser } from '../redux/features/authSlice';
-import { setCurrentPage, setSearchQuery } from '../redux/features/tourSlice';
-import { getProfile } from '../redux/features/profileSlice';
-import { DEFAULT_IMAGE } from '../constants';
+  MDBNavbarBrand,
+} from "mdb-react-ui-kit";
+import { useSelector, useDispatch } from "react-redux";
+import { setLogout } from "../redux/features/authSlice";
+import { searchTours } from "../redux/features/tourSlice";
+import { useNavigate } from "react-router-dom";
+import decode from "jwt-decode";
 
-const Header = ({ socket }) => {
+const Header = () => {
+  const [show, setShow] = useState(false);
+  const [search, setSearch] = useState("");
+  const { user } = useSelector((state) => ({ ...state.auth }));
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const { user } = useSelector((state) => state.auth);
-  const { userDetail } = useSelector((state) => state.profile);
-
-  const [search, setSearch] = useState('');
-  const [notifications, setNotifications] = useState([]);
-  const [isOpenSideMenu, setIsOpenSideMenu] = useState(false);
-  const [isOpenNotification, setIsOpenNotification] = useState(false);
-
   const token = user?.token;
-  const _userId = user?.result?._id;
 
-  useEffect(() => {
-    if (_userId) dispatch(getProfile({ _id: _userId }));
-  }, [_userId, dispatch]);
-
-  useEffect(() => {
-    if (socket) {
-      socket.on('receiveNotification', (data) => {
-        setNotifications((prev) => [...prev, data]);
-      });
-    }
-  }, [socket]);
-
-  // Check if the token is expired
   if (token) {
-    const decodeToken = jwtDecode(token);
-    const isTokenExpired = decodeToken.exp * 1000 < new Date().getTime();
-
-    if (isTokenExpired) {
-      dispatch(removeUser());
+    const decodedToken = decode(token);
+    if (decodedToken.exp * 1000 < new Date().getTime()) {
+      dispatch(setLogout());
     }
   }
 
-  const handleLogout = () => {
-    dispatch(removeUser());
-  };
-
-  const handleSearch = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     if (search) {
-      dispatch(setCurrentPage(1));
-      dispatch(setSearchQuery(search));
-      navigate('/');
+      dispatch(searchTours(search));
+      navigate(`/tours/search?searchQuery=${search}`);
+      setSearch("");
+    } else {
+      navigate("/");
     }
   };
 
-  const handleClickBell = () => {
-    setIsOpenNotification(!isOpenNotification);
-  };
-
-  const handleRead = () => {
-    setNotifications([]);
-    setIsOpenNotification(false);
-  };
-
-  const displayNotification = ({ senderName }) => {
-    return (
-      <span className="notification-content">{senderName} liked your tour</span>
-    );
+  const handleLogout = () => {
+    dispatch(setLogout());
   };
 
   return (
-    <MDBNavbar expand="lg" style={{ backgroundColor: '#f0e6ea' }}>
-      <MDBContainer fluid>
-        <Link
-          to="/"
-          style={{ color: '#606080', fontWeight: '600', fontSize: '22px' }}
+    <MDBNavbar fixed="top" expand="lg" style={{ backgroundColor: "#f0e6ea" }}>
+      <MDBContainer>
+        <MDBNavbarBrand
+          href="/"
+          style={{ color: "#606080", fontWeight: "600", fontSize: "22px" }}
         >
-          Touropedia
-        </Link>
-
+          Tourify
+        </MDBNavbarBrand>
         <MDBNavbarToggler
-          aria-controls="navbarSupportedContent"
+          type="button"
           aria-expanded="false"
-          aria-label="Toggle navigation"
-          style={{ color: '#606080' }}
-          onClick={() => setIsOpenSideMenu(!isOpenSideMenu)}
+          aria-label="Toogle navigation"
+          onClick={() => setShow(!show)}
+          style={{ color: "#606080" }}
         >
           <MDBIcon icon="bars" fas />
         </MDBNavbarToggler>
-
-        <MDBCollapse navbar show={isOpenSideMenu}>
+        <MDBCollapse show={show} navbar>
           <MDBNavbarNav right fullWidth={false} className="mb-2 mb-lg-0">
+            {user?.result?._id && (
+              <h5 style={{ marginRight: "30px", marginTop: "27px" }}>
+                Logged in as: {user?.result?.name}
+              </h5>
+            )}
             <MDBNavbarItem>
-              <Link className="nav-link" to="/">
+              <MDBNavbarLink href="/">
                 <p className="header-text">Home</p>
-              </Link>
+              </MDBNavbarLink>
             </MDBNavbarItem>
-
-            {_userId ? (
+            {user?.result?._id && (
               <>
                 <MDBNavbarItem>
-                  <Link className="nav-link" to="/add-tour">
+                  <MDBNavbarLink href="/addTour">
                     <p className="header-text">Add Tour</p>
-                  </Link>
+                  </MDBNavbarLink>
                 </MDBNavbarItem>
-
                 <MDBNavbarItem>
-                  <Link className="nav-link" to="/dashboard">
+                  <MDBNavbarLink href="/dashboard">
                     <p className="header-text">Dashboard</p>
-                  </Link>
-                </MDBNavbarItem>
-
-                <MDBNavbarItem>
-                  <Link className="nav-link" to="/" onClick={handleLogout}>
-                    <p className="header-text">Logout</p>
-                  </Link>
+                  </MDBNavbarLink>
                 </MDBNavbarItem>
               </>
+            )}
+            {user?.result?._id ? (
+              <MDBNavbarItem>
+                <MDBNavbarLink href="/login">
+                  <p className="header-text" onClick={() => handleLogout()}>
+                    Logout
+                  </p>
+                </MDBNavbarLink>
+              </MDBNavbarItem>
             ) : (
               <MDBNavbarItem>
-                <Link className="nav-link" to="/login">
+                <MDBNavbarLink href="/login">
                   <p className="header-text">Login</p>
-                </Link>
+                </MDBNavbarLink>
               </MDBNavbarItem>
             )}
           </MDBNavbarNav>
-
-          <form className="d-flex input-group w-auto" onSubmit={handleSearch}>
+          <form className="d-flex input-group w-auto" onSubmit={handleSubmit}>
             <input
               type="text"
               className="form-control"
@@ -149,94 +114,10 @@ const Header = ({ socket }) => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-
-            <div
-              style={{ marginTop: '5px', marginLeft: '5px', cursor: 'pointer' }}
-              onClick={handleSearch}
-            >
+            <div style={{ marginTop: "5px", marginLeft: "5px" }}>
               <MDBIcon fas icon="search" />
             </div>
           </form>
-
-          {_userId && (
-            <>
-              <div
-                style={{
-                  display: isOpenSideMenu ? 'inline-block' : 'block',
-                  margin: isOpenSideMenu ? '15px 0 5px 0' : '',
-                  marginLeft: '10px',
-                  cursor: 'pointer',
-                }}
-                onClick={() => navigate(`/profile/${userDetail?._id}`)}
-              >
-                <img
-                  src={userDetail?.imageFile || DEFAULT_IMAGE}
-                  alt={userDetail?.name}
-                  style={{
-                    width: '30px ',
-                    height: '30px',
-                    borderRadius: '50%',
-                  }}
-                />
-              </div>
-
-              <div
-                className="mx-3"
-                style={{
-                  display: isOpenSideMenu ? 'inline-block' : 'block',
-                  margin: isOpenSideMenu ? '15px 0 5px 0' : '',
-                }}
-                onClick={handleClickBell}
-              >
-                <MDBIcon fas icon="bell" style={{ cursor: 'pointer' }} />
-                <MDBBadge notification pill color="danger">
-                  {notifications.length > 0 && (
-                    <div className="counter">{notifications.length}</div>
-                  )}
-                </MDBBadge>
-              </div>
-            </>
-          )}
-
-          {isOpenNotification && (
-            <div
-              className="notification"
-              onClick={() => setIsOpenNotification(false)}
-            >
-              {notifications.length > 0 ? (
-                <>
-                  {notifications.map((notification) =>
-                    displayNotification(notification)
-                  )}
-
-                  <div className="align-item-center">
-                    <MDBBtn
-                      size="sm"
-                      style={{ width: '150px', backgroundColor: '#ec4a89' }}
-                      onClick={handleRead}
-                    >
-                      Mark as all read
-                    </MDBBtn>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <span className="notification-content">
-                    You have no notification
-                  </span>
-
-                  <div className="align-item-center">
-                    <MDBBtn
-                      size="sm"
-                      style={{ width: '150px', backgroundColor: '#ec4a89' }}
-                    >
-                      Close
-                    </MDBBtn>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </MDBCollapse>
       </MDBContainer>
     </MDBNavbar>

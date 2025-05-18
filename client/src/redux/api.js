@@ -1,49 +1,37 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_HOST = process.env.REACT_APP_API_HOST || 'http://localhost:5005';
-const API = axios.create({ baseURL: API_HOST });
+const devEnv = process.env.NODE_ENV !== "production";
+
+const { REACT_APP_DEV_API, REACT_APP_PROD_API } = process.env;
+
+const API = axios.create({
+  baseURL: `${devEnv ? REACT_APP_DEV_API : REACT_APP_PROD_API}`,
+});
+
 API.interceptors.request.use((req) => {
-  const storedUser = JSON.parse(localStorage.getItem('profile'));
-
-  if (storedUser) {
-    const token = storedUser.token;
-    req.headers.Authorization = `Bearer ${token}`;
+  if (localStorage.getItem("profile")) {
+    req.headers.Authorization = `Bearer ${
+      JSON.parse(localStorage.getItem("profile")).token
+    }`;
   }
-
   return req;
 });
 
-// User API
-export const signIn = (payload) => API.post('/users/signin', payload);
-export const googleSignin = (payload) =>
-  API.post('/users/google-signin', payload);
-export const signUp = (payload) => API.post('/users/signup', payload);
+export const signIn = (formData) => API.post("https://tourify-koei.onrender.com/users/signin", formData);
+export const signUp = (formData) => API.post("https://tourify-koei.onrender.com/users/signup", formData);
+export const googleSignIn = (result) => API.post("https://tourify-koei.onrender.com/users/googleSignIn", result);
 
-// Profile API
-export const getProfile = ({ _id }) => API.get(`/profiles/${_id}`);
-export const updateProfile = ({ _id, data }) =>
-  API.put(`/profiles/${_id}`, data);
+export const createTour = (tourData) => API.post("https://tourify-koei.onrender.com/tour/", tourData);
+export const getTours = (page) => API.get(`https://tourify-koei.onrender.com/tour?page=${page}`);
+export const getTour = (id) => API.get(`https://tourify-koei.onrender.com/tour/${id}`);
+export const deleteTour = (id) => API.delete(`https://tourify-koei.onrender.com/tour/${id}`);
+export const updateTour = (updatedTourData, id) =>
+  API.patch(`https://tourify-koei.onrender.com/tour/${id}`, updatedTourData);
+export const getToursByUser = (userId) => API.get(`https://tourify-koei.onrender.com/tour/userTours/${userId}`);
 
-// Tour API
-export const getTours = ({ page, searchQuery }) =>
-  API.get(
-    `/tours?${page ? `page=${page}` : ''}${
-      searchQuery ? `&searchQuery=${searchQuery}` : ''
-    }`
-  );
-export const getToursByTag = (tag) => API.get(`/tours/tags/${tag}`);
-export const getRelatedTours = (_id, data) =>
-  API.post(`/tours/${_id}/related-tours`, data);
-export const getToursByUser = (_userId) => API.get(`/tours/users/${_userId}`);
-export const getTour = (_id) => API.get(`/tours/${_id}`);
-export const getAllTags = () => API.get('/tours/tags');
-export const createTour = (tourData) => API.post('/tours', tourData);
-export const updateTour = (_id, tourData) => API.put(`/tours/${_id}`, tourData);
-export const deleteTour = (_id) => API.delete(`/tours/${_id}`);
-export const likeTour = (_id) => API.put(`/tours/${_id}/likes`);
-export const loadMoreTours = ({ skip, limit }) =>
-  API.get(`/tours/load-more?skip=${skip}&limit=${limit}`);
+export const getToursBySearch = (searchQuery) =>
+  API.get(`https://tourify-koei.onrender.com/tour/search?searchQuery=${searchQuery}`);
 
-// Upload API
-export const uploadImage = (imageData) =>
-  API.post('/uploads/images', imageData);
+export const getTagTours = (tag) => API.get(`https://tourify-koei.onrender.com/tour/tag/${tag}`);
+export const getRelatedTours = (tags) => API.post(`https://tourify-koei.onrender.com/tour/relatedTours`, tags);
+export const likeTour = (id) => API.patch(`https://tourify-koei.onrender.com/tour/like/${id}`);

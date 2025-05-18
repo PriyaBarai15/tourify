@@ -1,15 +1,13 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-
-const appName = process.env.REACT_APP_APP_NAME;
-const appHost = process.env.REACT_APP_HOST;
+import React from "react";
+import PropTypes from "prop-types";
 
 function renderDisqus() {
   if (window.DISQUS === undefined) {
-    var script = document.createElement('script');
+    var script = document.createElement("script");
     script.async = true;
-    script.src = `https://${appName}.disqus.com/embed.js`;
-    document.getElementsByTagName('head')[0].appendChild(script);
+    script.src =
+      "https://" + process.env.REACT_APP_SHORTNAME + ".disqus.com/embed.js";
+    document.getElementsByTagName("head")[0].appendChild(script);
   } else {
     window.DISQUS.reset({ reload: true });
   }
@@ -21,7 +19,6 @@ class DisqusThread extends React.Component {
     title: PropTypes.string.isRequired,
     path: PropTypes.string.isRequired,
   };
-
   shouldComponentUpdate(nextProps) {
     return (
       this.props.id !== nextProps.id ||
@@ -40,12 +37,13 @@ class DisqusThread extends React.Component {
 
   render() {
     let { id, title, path, ...other } = this.props;
+    console.log("this.props", this.props);
 
     if (process.env.BROWSER) {
-      window.disqus_shortname = appName;
+      window.disqus_shortname = process.env.REACT_APP_SHORTNAME;
       window.disqus_identifier = id;
       window.disqus_title = title;
-      window.disqus_url = appHost + path;
+      window.disqus_url = process.env.REACT_APP_WEBSITE_URL + path;
     }
 
     return <div {...other} id="disqus_thread" />;

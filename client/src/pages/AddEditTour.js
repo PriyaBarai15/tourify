@@ -1,267 +1,153 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
 import {
   MDBCard,
   MDBCardBody,
   MDBValidation,
-  MDBValidationItem,
-  MDBInput,
-  MDBTextArea,
-  MDBCardImage,
   MDBBtn,
-} from 'mdb-react-ui-kit';
-import ChipInput from 'material-ui-chip-input';
-import FileBase from 'react-file-base64';
-import { toast } from 'react-toastify';
-import {
-  createTour,
-  updateTour,
-  clearError,
-} from '../redux/features/tourSlice';
-import * as api from '../redux/api';
-import { DEFAULT_IMAGE } from '../constants';
+  MDBInput,
+} from "mdb-react-ui-kit";
+import ChipInput from "material-ui-chip-input";
+import FileBase from "react-file-base64";
+import { toast } from "react-toastify";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { createTour, updateTour } from "../redux/features/tourSlice";
 
-const initalState = {
-  title: '',
-  description: '',
-  category: '',
+const initialState = {
+  title: "",
+  description: "",
   tags: [],
 };
 
-const categoryOptions = ['City', 'Beach', 'Mountain', 'Forest', 'Historic'];
-
 const AddEditTour = () => {
+  const [tourData, setTourData] = useState(initialState);
+  const [tagErrMsg, setTagErrMsg] = useState(null);
+  const { error, userTours } = useSelector((state) => ({
+    ...state.tour,
+  }));
+  const { user } = useSelector((state) => ({ ...state.auth }));
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { _id } = useParams();
 
-  const { userTours, error } = useSelector((state) => state.tour);
-
-  const [tourData, setTourData] = useState(initalState);
-  const [categoryErrMsg, setCategoryErrMsg] = useState(null);
-  const [tagErrMsg, setTagErrMsg] = useState(null);
-  const [selectedFileInfo, setSelectedFileInfo] = useState(null);
-
-  const { title, description, category, tags } = tourData;
+  const { title, description, tags } = tourData;
+  const { id } = useParams();
 
   useEffect(() => {
-    if (_id) {
-      const singleTour = userTours.find((tour) => tour._id === _id);
-      setTourData(singleTour);
+    if (id) {
+      const singleTour = userTours.find((tour) => tour._id === id);
+      console.log(singleTour);
+      setTourData({ ...singleTour });
     }
-  }, [_id, userTours]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   useEffect(() => {
-    if (error) {
-      toast.error(error);
-      dispatch(clearError);
-    }
-  }, [error, dispatch]);
+    error && toast.error(error);
+  }, [error]);
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!tags.length) {
+      setTagErrMsg("Please provide some tags");
+    }
+    if (title && description && tags) {
+      const updatedTourData = { ...tourData, name: user?.result?.name };
+
+      if (!id) {
+        dispatch(createTour({ updatedTourData, navigate, toast }));
+      } else {
+        dispatch(updateTour({ id, updatedTourData, toast, navigate }));
+      }
+      handleClear();
+    }
+  };
   const onInputChange = (e) => {
     const { name, value } = e.target;
     setTourData({ ...tourData, [name]: value });
   };
-
-  const handleImageChange = (fileInfo) => {
-    setSelectedFileInfo(fileInfo);
-  };
-
-  const handleImageUpload = async (file) => {
-    try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await api.uploadImage(formData);
-
-      const imageHost = process.env.REACT_APP_FILE_HOST || '';
-      const imagePath = response.data.url;
-      const imageUrl = `${imageHost}${imagePath}`;
-      return imageUrl;
-    } catch (error) {
-      console.log('handleImageUpload() - error: ', error);
-
-      const errorMessage = error.response?.data?.message || error.message;
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-  };
-
   const handleAddTag = (tag) => {
-    setTourData({ ...tourData, tags: [...tourData.tags, tag] });
     setTagErrMsg(null);
+    setTourData({ ...tourData, tags: [...tourData.tags, tag] });
   };
-
-  const handleDeleteTag = (tagToDelete) => {
+  const handleDeleteTag = (deleteTag) => {
     setTourData({
       ...tourData,
-      tags: tourData.tags.filter((tag) => tag !== tagToDelete),
+      tags: tourData.tags.filter((tag) => tag !== deleteTag),
     });
   };
-
-  const handleCategoryChange = (e) => {
-    setCategoryErrMsg(null);
-    setTourData({ ...tourData, category: e.target.value });
-  };
-
-  const validateForm = () => {
-    let isValid = true;
-    if (!category) {
-      setCategoryErrMsg('Please select a category');
-      isValid = false;
-    }
-    if (tags.length === 0) {
-      setTagErrMsg('Please add at least one tag');
-      isValid = false;
-    }
-
-    if (!title?.trim() || !description.trim() || !tags) {
-      isValid = false;
-    }
-
-    return isValid;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const isValid = validateForm();
-
-    if (isValid) {
-      let imageFile;
-      if (selectedFileInfo) {
-        const selectedFile = selectedFileInfo.file;
-        imageFile = await handleImageUpload(selectedFile);
-      }
-
-      // Create tour
-      if (!_id) {
-        dispatch(
-          createTour({
-            data: { ...tourData, imageFile },
-            navigate,
-            toast,
-          })
-        );
-      }
-
-      // Update tour
-      else {
-        dispatch(
-          updateTour({ _id, data: { ...tourData, imageFile }, toast, navigate })
-        );
-      }
-    }
-  };
-
   const handleClear = () => {
-    setTourData(initalState);
-    setSelectedFileInfo(null);
+    setTourData({ title: "", description: "", tags: [] });
   };
-
   return (
     <div
-      className="container"
       style={{
-        margin: 'auto',
-        marginTop: '20px',
-        maxWidth: '450px',
-        alignContent: 'center',
+        margin: "auto",
+        padding: "15px",
+        maxWidth: "450px",
+        alignContent: "center",
+        marginTop: "120px",
       }}
+      className="container"
     >
-      <MDBCard>
-        <h5>{_id ? 'Update Tour' : 'Add Tour'}</h5>
-
+      <MDBCard alignment="center">
+        <h5>{id ? "Update Tour" : "Add Tour"}</h5>
         <MDBCardBody>
-          <MDBValidation noValidate onSubmit={handleSubmit} className="row g-3">
+          <MDBValidation onSubmit={handleSubmit} className="row g-3" noValidate>
             <div className="col-md-12">
-              <MDBValidationItem invalid feedback="Please provide title.">
-                <MDBInput
-                  required
-                  className="form-control"
-                  type="text"
-                  name="title"
-                  placeholder="Enter Title"
-                  value={title}
-                  onChange={onInputChange}
-                />
-              </MDBValidationItem>
+              <MDBInput
+                placeholder="Enter Title"
+                type="text"
+                value={title || ""}
+                name="title"
+                onChange={onInputChange}
+                className="form-control"
+                required
+                invalid
+                validation="Please provide title"
+              />
             </div>
-
             <div className="col-md-12">
-              <MDBValidationItem invalid feedback="Please provide description.">
-                <MDBTextArea
-                  required
-                  className="form-control"
-                  type="text"
-                  name="description"
-                  placeholder="Enter Description"
-                  rows={4}
-                  value={description}
-                  onChange={onInputChange}
-                />
-              </MDBValidationItem>
+              <MDBInput
+                placeholder="Enter Description"
+                type="text"
+                value={description}
+                name="description"
+                onChange={onInputChange}
+                className="form-control"
+                required
+                invalid
+                textarea
+                rows={4}
+                validation="Please provide description"
+              />
             </div>
-
-            <div className="col-md-12">
-              <select
-                className={`category-dropdown  ${
-                  categoryErrMsg ? 'form-input-error' : ''
-                }`}
-                onChange={handleCategoryChange}
-                value={category}
-              >
-                <option>Please select category</option>
-                {categoryOptions.map((option, index) => (
-                  <option key={index} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-
-              {categoryErrMsg && (
-                <div className="categoryErrMsg">{categoryErrMsg}</div>
-              )}
-            </div>
-
             <div className="col-md-12">
               <ChipInput
-                fullWidth
-                className={`form-control ${
-                  tagErrMsg ? 'form-input-error' : ''
-                }`}
-                placeholder="Enter Tags"
+                name="tags"
                 variant="outlined"
+                placeholder="Enter Tag"
+                fullWidth
                 value={tags}
                 onAdd={(tag) => handleAddTag(tag)}
                 onDelete={(tag) => handleDeleteTag(tag)}
               />
-
               {tagErrMsg && <div className="tagErrMsg">{tagErrMsg}</div>}
             </div>
-
-            <MDBCardImage
-              src={
-                selectedFileInfo?.base64 || tourData?.imageFile || DEFAULT_IMAGE
-              }
-              alt={tourData?.name}
-            />
-
             <div className="d-flex justify-content-start">
               <FileBase
                 type="file"
                 multiple={false}
-                onDone={handleImageChange}
+                onDone={({ base64 }) =>
+                  setTourData({ ...tourData, imageFile: base64 })
+                }
               />
             </div>
-
             <div className="col-12">
-              <MDBBtn style={{ width: '100%' }}>
-                {_id ? 'Update' : 'Submit'}
+              <MDBBtn style={{ width: "100%" }}>
+                {id ? "Update" : "Submit"}
               </MDBBtn>
               <MDBBtn
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
                 className="mt-2"
                 color="danger"
                 onClick={handleClear}

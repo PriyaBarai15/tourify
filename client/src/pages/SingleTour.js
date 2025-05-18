@@ -1,111 +1,92 @@
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect } from "react";
 import {
   MDBCard,
   MDBCardBody,
-  MDBCardImage,
   MDBCardText,
-  MDBBtn,
-  MDBIcon,
+  MDBCardImage,
   MDBContainer,
-} from 'mdb-react-ui-kit';
-import moment from 'moment';
-import RelatedTours from '../components/RelatedTours';
-import DisqusThread from '../components/DisqusThread';
-import { getTour, getRelatedTours } from '../redux/features/tourSlice';
-import { DEFAULT_IMAGE } from '../constants';
+  MDBIcon,
+  MDBBtn,
+} from "mdb-react-ui-kit";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams, useNavigate } from "react-router-dom";
+import moment from "moment";
+import { getRelatedTours, getTour } from "../redux/features/tourSlice";
+import RelatedTours from "../components/RelatedTours";
+import DisqusThread from "../components/DisqusThread";
 
 const SingleTour = () => {
   const dispatch = useDispatch();
+  const { tour, relatedTours } = useSelector((state) => ({ ...state.tour }));
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { _id } = useParams();
-
-  const { tour, relatedTours } = useSelector((state) => state.tour);
   const tags = tour?.tags;
 
   useEffect(() => {
-    if (_id && tags) {
-      dispatch(getRelatedTours({ _id, data: { tags } }));
-    }
-  }, [_id, tags, dispatch]);
+    tags && dispatch(getRelatedTours(tags));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tags]);
 
   useEffect(() => {
-    dispatch(getTour(_id));
-  }, [_id, dispatch]);
-
+    if (id) {
+      dispatch(getTour(id));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
   return (
-    <MDBContainer style={{ position: 'relative' }}>
-      <MDBBtn
-        floating
-        tag="a"
-        color="black"
-        style={{
-          position: 'absolute',
-          top: '10px',
-          left: '30px',
-          zIndex: 1,
-        }}
-        onClick={() => navigate('/')}
-      >
-        <MDBIcon
-          fas
-          size="lg"
-          color="white"
-          icon="long-arrow-alt-left"
-          style={{ float: 'left' }}
-        />
-      </MDBBtn>
-
-      <MDBCard className="my-3">
-        <MDBCardImage
-          position="top"
-          src={tour?.imageFile || DEFAULT_IMAGE}
-          alt={tour?.title}
-          style={{ width: '100%', maxHeight: '600px' }}
-        />
-
-        <MDBCardBody>
-          <h3>{tour?.title}</h3>
-
-          <span>
-            <p className="text-start tourName">
-              Created By: {tour?.creator?.name}
-            </p>
-          </span>
-
-          <div style={{ float: 'left' }}>
-            <span className="text-start">
-              {tour?.tags?.map((tag) => `#${tag} `)}
+    <>
+      <MDBContainer>
+        <MDBCard className="mb-3 mt-2">
+          <MDBCardImage
+            position="top"
+            style={{ width: "100%", maxHeight: "600px" }}
+            src={tour.imageFile}
+            alt={tour.title}
+          />
+          <MDBCardBody>
+            <MDBBtn
+              tag="a"
+              color="none"
+              style={{ float: "left", color: "#000" }}
+              onClick={() => navigate("/")}
+            >
+              <MDBIcon
+                fas
+                size="lg"
+                icon="long-arrow-alt-left"
+                style={{ float: "left" }}
+              />
+            </MDBBtn>
+            <h3>{tour.title}</h3>
+            <span>
+              <p className="text-start tourName">Created By: {tour.name}</p>
             </span>
-          </div>
-          <br />
-
-          <MDBCardText className="text-start mt-2">
-            <MDBIcon
-              far
-              icon="calendar-alt"
-              className="me-2"
-              size="lg"
-              style={{ float: 'left', margin: '5px' }}
-            />
-
-            <small className="text-muted">
-              {moment(tour?.createdAt).fromNow()}
-            </small>
-          </MDBCardText>
-
-          <MDBCardText className="text-start mb-0 lead">
-            {tour?.description}
-          </MDBCardText>
-        </MDBCardBody>
-
-        {/* Related Tours */}
-        <RelatedTours relatedTours={relatedTours} />
-      </MDBCard>
-
-      <DisqusThread id={_id} title={tour?.title || ''} path={`/tour/${_id}`} />
-    </MDBContainer>
+            <div style={{ float: "left" }}>
+              <span className="text-start">
+                {tour && tour.tags && tour.tags.map((item) => `#${item} `)}
+              </span>
+            </div>
+            <br />
+            <MDBCardText className="text-start mt-2">
+              <MDBIcon
+                style={{ float: "left", margin: "5px" }}
+                far
+                icon="calendar-alt"
+                size="lg"
+              />
+              <small className="text-muted">
+                {moment(tour.createdAt).fromNow()}
+              </small>
+            </MDBCardText>
+            <MDBCardText className="lead mb-0 text-start">
+              {tour.description}
+            </MDBCardText>
+          </MDBCardBody>
+          <RelatedTours relatedTours={relatedTours} tourId={id} />
+        </MDBCard>
+        <DisqusThread id={id} title={tour.title} path={`/tour/${id}`} />
+      </MDBContainer>
+    </>
   );
 };
 

@@ -1,144 +1,74 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import {
-  MDBContainer,
-  MDBCol,
-  MDBRow,
-  MDBTypography,
-  MDBBtn,
-} from 'mdb-react-ui-kit';
-import { getTours, getAllTags } from '../redux/features/tourSlice';
-import TourCard from '../components/TourCard';
-import Spinner from '../components/Spinner';
-import Pagination from '../components/Pagination';
-import PopularTags from '../components/PopularTags';
-import Categories from '../components/Categories';
+import React, { useEffect } from "react";
+import { MDBCol, MDBContainer, MDBRow, MDBTypography } from "mdb-react-ui-kit";
+import { useDispatch, useSelector } from "react-redux";
+import { getTours, setCurrentPage } from "../redux/features/tourSlice";
+import CardTour from "../components/CardTour";
+import Spinner from "../components/Spinner";
+import Pagination from "../components/Pagination";
+import { useLocation } from "react-router-dom";
 
-const Home = ({ socket }) => {
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
+
+const Home = () => {
+  const { tours, loading, currentPage, numberOfPages } = useSelector(
+    (state) => ({
+      ...state.tour,
+    })
+  );
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const {
-    tours,
-    searchQuery,
-    currentPage,
-    numberOfPages,
-    totalTags,
-    totalToursData,
-    loading,
-  } = useSelector((state) => state.tour);
-
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
-
-  const counts = totalToursData.reduce((prevValue, currentValue) => {
-    let name = currentValue.category;
-    if (!prevValue.hasOwnProperty(name)) {
-      prevValue[name] = 0;
-    }
-
-    prevValue[name]++;
-    delete prevValue['undefined'];
-    return prevValue;
-  }, {});
-
-  const categoryCount = Object.keys(counts).map((k) => {
-    return {
-      category: k,
-      count: counts[k],
-    };
-  });
-
-  const checkScreenSize = () => {
-    if (window.innerWidth < 950) {
-      setIsSmallScreen(true);
-    } else {
-      setIsSmallScreen(false);
-    }
-  };
+  const query = useQuery();
+  const searchQuery = query.get("searchQuery");
+  const location = useLocation();
 
   useEffect(() => {
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
+    dispatch(getTours(currentPage));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
-    return () => {
-      window.removeEventListener('resize', checkScreenSize);
-    };
-  }, []);
-
-  useEffect(() => {
-    dispatch(getTours({ page: currentPage, searchQuery }));
-  }, [currentPage, searchQuery, dispatch]);
-
-  useEffect(() => {
-    dispatch(getAllTags());
-  }, []);
-
-  return loading ? (
-    <Spinner />
-  ) : (
+  if (loading) {
+    return <Spinner />;
+  }
+  return (
     <div
       style={{
-        margin: 'auto',
-        padding: '20px',
-        maxWidth: '1280px',
-        alignContent: 'center',
+        margin: "auto",
+        padding: "15px",
+        maxWidth: "1000px",
+        alignContent: "center",
       }}
     >
-      <MDBRow>
-        {tours.length === 0 ? (
-          <MDBCol>
-            <MDBTypography tag="h5" variant="h5">
-              No Tours Found
-            </MDBTypography>
-          </MDBCol>
-        ) : (
-          <MDBCol>
-            <MDBContainer>
-              <MDBRow className="row-cols-1 row-cols-md-3 g-2">
-                {tours.map((tour) => (
-                  <TourCard key={tour._id} socket={socket} {...tour} />
-                ))}
-              </MDBRow>
-            </MDBContainer>
-          </MDBCol>
+      <MDBRow className="mt-5">
+        {tours.length === 0 && location.pathname === "/" && (
+          <MDBTypography className="text-center mb-0" tag="h2">
+            No Tours Found
+          </MDBTypography>
         )}
 
-        {isSmallScreen ? (
-          <div className="mt-4">
-            <PopularTags totalTags={totalTags} />
-            <Categories categoryCount={categoryCount} />
-            <MDBBtn
-              className="mt-3"
-              style={{ width: '100%' }}
-              onClick={() => navigate('/tours')}
-            >
-              View all Tours
-            </MDBBtn>
-          </div>
-        ) : (
-          <MDBCol size="3" className="mt-4">
-            <PopularTags totalTags={totalTags} />
-            <Categories categoryCount={categoryCount} />
-            <MDBBtn
-              className="mt-3"
-              style={{ width: '100%' }}
-              onClick={() => navigate('/tours')}
-            >
-              View all Tours
-            </MDBBtn>
-          </MDBCol>
+        {tours.length === 0 && location.pathname !== "/" && (
+          <MDBTypography className="text-center mb-0" tag="h2">
+            We couldn't find any matches for "{searchQuery}"
+          </MDBTypography>
         )}
 
-        <div className="mt-3">
-          {tours.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              numberOfPages={numberOfPages}
-            />
-          )}
-        </div>
+        <MDBCol>
+          <MDBContainer>
+            <MDBRow className="row-cols-1 row-cols-md-3 g-2">
+              {tours &&
+                tours.map((item) => <CardTour key={item._id} {...item} />)}
+            </MDBRow>
+          </MDBContainer>
+        </MDBCol>
       </MDBRow>
+      {tours.length > 0 && !searchQuery && (
+        <Pagination
+          setCurrentPage={setCurrentPage}
+          numberOfPages={numberOfPages}
+          currentPage={currentPage}
+          dispatch={dispatch}
+        />
+      )}
     </div>
   );
 };

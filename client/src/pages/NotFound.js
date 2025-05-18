@@ -1,13 +1,9 @@
-import React from 'react';
+import React from "react";
 
 const NotFound = () => {
   return (
     <div>
-      <img
-        src="/images/404.jpg"
-        alt="Not Found"
-        style={{ marginTop: '30px' }}
-      />
+      <img src="/images/404.jpg" alt="Not Found" />
     </div>
   );
 };

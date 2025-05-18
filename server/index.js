@@ -1,94 +1,67 @@
-import dotenv from 'dotenv';
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import morgan from 'morgan';
-import fileUpload from 'express-fileupload';
-import { Server } from 'socket.io';
-import userRouter from './routes/user.js';
-import tourRouter from './routes/tour.js';
-import profileRouter from './routes/profile.js';
-import uploadRouter from './routes/upload.js';
+// import express from "express";
+// const port = 5000;
 
-// Environment variables
-dotenv.config();
+// const app = express();
+
+// app.get("/",(req,res) => {
+//     res.send("Hello Express");
+// });
+
+// // mongodb+srv://codelikeme:<password>@cluster0.pzq9zep.mongodb.net/?retryWrites=true&w=majority
+
+// // LX2N2umJVPsZWcJr
+
+// app.listen(port, () => {
+//     console.log(`server running on port ${port}`);
+// });
+
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import morgan from "morgan";
+import userRouter from "./routes/user.js";
+import tourRouter from "./routes/tour.js";
 
 const app = express();
 
-// Socket Server
-const io = new Server({
-  cors: {
-    origin: process.env.CLIENT_HOST,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
-
-let onlineUsers = [];
-
-const addNewUser = ({ socketId, userId, userName }) => {
-  const isAlreadyOnline = onlineUsers.some((user) => user.userId === userId);
-  if (isAlreadyOnline) {
-    onlineUsers = onlineUsers.map((user) =>
-      user.userId === userId ? { userId, socketId } : user
-    );
-  } else {
-    onlineUsers.push({ userId, socketId });
-  }
-};
-
-const removeUser = (socketId) => {
-  return onlineUsers.filter((user) => user.socketId !== socketId);
-};
-
-const getUser = (userId) => {
-  return onlineUsers.find((user) => user.userId === userId);
-};
-
-io.on('connection', (socket) => {
-  socket.on('newUser', ({ userId, userName }) => {
-    addNewUser({ socketId: socket.id, userId, userName });
-  });
-
-  socket.on('sendNotification', ({ senderName, receiverId }) => {
-    const receiver = getUser(receiverId);
-    if (receiver) {
-      io.to(receiver.socketId).emit('receiveNotification', { senderName });
-    }
-  });
-
-  socket.on('disconnect', () => {
-    removeUser(socket.id);
-  });
-});
-
-// Middlewares
-app.use(morgan('dev'));
+app.use(morgan("dev"));
+app.use(express.json({ limit: "30mb", extended: true }));
+app.use(express.urlencoded({ limit: "30mb", extended: true }));
 app.use(cors());
-app.use(express.static('public'));
-app.use(express.json({ limit: '30mb', extended: true }));
-app.use(express.urlencoded({ limit: '30mb', extended: true }));
-app.use(fileUpload());
 
-// Routes
-app.use('/users', userRouter);
-app.use('/tours', tourRouter);
-app.use('/profiles', profileRouter);
-app.use('/uploads', uploadRouter);
+app.use("/users", userRouter); // http://localhost:5000/user/signup
 
-// MongoDB & Server & Socket Server Connection
-const mongoUri = process.env.MONGO_URI;
-const port = process.env.PORT || 5005;
+app.use("/tour", tourRouter);
+
+// const MONGODB_URL = 
+// "mongodb+srv://sourabhchandel59:u5y9cpwrday2IZ1A@cluster0.cr499ok.mongodb.net/tour_db?retryWrites=true&w=majority";
+
+const port = 8000;
+
+// mongodb+srv://codelikeme:<password>@cluster0.0lrgm2z.mongodb.net/?retryWrites=true&w=majority
+
+// app.get("/",(req,res) => {
+//     res.send("Hello Express");
+// })
+
+
+// sourabhchandel59
+// u5y9cpwrday2IZ1A
+
+// app.listen(port,() => {
+//     console.log(`server running on port ${port}`);
+// });
+
+var MONGODB_URL = "mongodb+srv://saurabhkant988:YRiBe7yyyrMXquDx@tourify.mcg3d.mongodb.net";
+
+// mongoose.;`
 
 mongoose
-  .connect(mongoUri)
+  .connect(MONGODB_URL)
   .then(() => {
-    // Open Server
-    const server = app.listen(port, () =>
-      console.log(`MongoDB Connected and Server is running on port ${port}`)
-    );
-
-    // Open Socket Server
-    io.listen(server);
+    app.listen(port, () => console.log(`Server running on port ${port}`));
   })
   .catch((error) => console.log(`${error} did not connect`));
+
+
+  

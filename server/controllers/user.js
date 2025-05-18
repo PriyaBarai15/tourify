@@ -1,94 +1,80 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import User from '../models/user.js';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+import UserModal from "../models/user.js";
+
+const secret = "test";
+
+export const signin = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const oldUser = await UserModal.findOne({ email });
+    if (!oldUser)
+      return res.status(404).json({ message: "User doesn't exist" });
+
+    const isPasswordCorrect = await bcrypt.compare(password, oldUser.password);
+
+    if (!isPasswordCorrect)
+      return res.status(400).json({ message: "Invalid credentials" });
+
+    const token = jwt.sign({ email: oldUser.email, id: oldUser._id }, secret, {
+      expiresIn: "1h",
+    });
+
+    res.status(200).json({ result: oldUser, token });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong" });
+    console.log(error);
+  }
+};
 
 export const signup = async (req, res) => {
+  const { email, password, firstName, lastName } = req.body;
   try {
-    const { email, password, firstName, lastName } = req.body;
-    const oldUser = await User.findOne({ email });
+    const oldUser = await UserModal.findOne({ email });
 
     if (oldUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = await User.create({
+
+    const result = await UserModal.create({
       email,
       password: hashedPassword,
       name: `${firstName} ${lastName}`,
     });
 
-    const token = generateToken(user);
-
-    res.status(200).json({ result: getUserInfo(user), token });
+    const token = jwt.sign({ email: result.email, id: result._id }, secret, {
+      expiresIn: "1h",
+    });
+    res.status(201).json({ result, token });
   } catch (error) {
-    console.log('signup() - error', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    res.status(500).json({ message: "Something went wrong" });
+    console.log(error);
   }
 };
 
-export const signin = async (req, res) => {
+export const googleSignIn = async (req, res) => {
+  const { email, name, token, googleId } = req.body;
+
   try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "User doesn't exist" });
+    const oldUser = await UserModal.findOne({ email });
+    if (oldUser) {
+      const result = { _id: oldUser._id.toString(), email, name };
+      return res.status(200).json({ result, token });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-      return res.status(400).json({ message: 'Invalid inputs' });
-    }
+    const result = await UserModal.create({
+      email,
+      name,
+      googleId,
+    });
 
-    const token = generateToken(user);
-
-    res.status(200).json({ result: getUserInfo(user), token });
+    res.status(200).json({ result, token });
   } catch (error) {
-    console.log('signin() - error', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    res.status(500).json({ message: "Something went wrong" });
+    console.log(error);
   }
 };
-
-export const googleSignin = async (req, res) => {
-  try {
-    const { email, name, googleId } = req.body;
-
-    // Check if user already exists with the same email
-    let user = await User.findOne({ email });
-    if (!user) {
-      user = await User.create({
-        email,
-        name,
-        googleId,
-      });
-    }
-
-    const token = generateToken(user);
-
-    res.status(200).json({ result: getUserInfo(user), token });
-  } catch (error) {
-    console.log('googleSignin() - error', error);
-    res.status(500).json({ message: 'Something went wrong' });
-  }
-};
-
-export function getUserInfo(user) {
-  return {
-    _id: user._id.toString(),
-    email: user.email,
-    name: user.name,
-  };
-}
-
-function generateToken(user) {
-  return jwt.sign(
-    {
-      email: user.email,
-      id: user._id,
-      googleId: user.googleId,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRE }
-  );
-}

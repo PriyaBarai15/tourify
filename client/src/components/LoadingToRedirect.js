@@ -1,23 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const LoadingToRedirect = () => {
-  const navigate = useNavigate();
-
   const [count, setCount] = useState(5);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const interval = setInterval(() => {
       setCount((currentCount) => --currentCount);
     }, 1000);
 
-    if (count === 0) navigate('/login');
-
+    count === 0 && navigate("/login");
     return () => clearInterval(interval);
   }, [count, navigate]);
-
   return (
-    <div className="mt-2">
+    <div style={{ marginTop: "100px" }}>
       <h5>Redirecting you in {count} seconds</h5>
     </div>
   );

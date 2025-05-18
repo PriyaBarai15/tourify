@@ -1,30 +1,22 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const tourSchema = new mongoose.Schema(
-  {
-    title: String,
-    description: String,
-    category: String,
-    imageFile: String,
-    tags: [String],
-    likes: {
-      type: [mongoose.Schema.Types.ObjectId],
-      default: [],
-    },
-    creator: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    },
+const tourSchema = mongoose.Schema({
+  title: String,
+  description: String,
+  name: String,
+  creator: String,
+  tags: [String],
+  imageFile: String,
+  createdAt: {
+    type: Date,
+    default: new Date(),
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
-);
-
-tourSchema.virtual('likeCount').get(function () {
-  return this.likes.length;
+  likes: {
+    type: [String],
+    default: [],
+  },
 });
 
-export default mongoose.model('Tour', tourSchema);
+const TourModal = mongoose.model("Tour", tourSchema);
+
+export default TourModal;
