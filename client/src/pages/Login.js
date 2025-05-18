@@ -13,7 +13,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { googleSignIn, login } from "../redux/features/authSlice";
-import { GoogleLogin } from "react-google-login";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { loadGapiInsideDOM } from 'gapi-script';
 const gapi = await loadGapiInsideDOM();
 
@@ -177,14 +177,17 @@ function GoogleLoginButton() {
   };
   return (
    <div style={{ textAlign: 'center' }}>
-    <GoogleLogin
-     clientId={clientId}
-     buttonText='Login'
-     onSuccess={onSuccess}
-     onFailure={onFailure}
-     cookiePolicy={'single_host_origin'}
-     isSignedIn={false}
-    />
+    <GoogleOAuthProvider clientId={clientId}>
+      <GoogleLogin
+      clientId={clientId}
+      buttonText='Login'
+      onSuccess={onSuccess}
+      onError={onFailure}
+      cookiePolicy={'single_host_origin'}
+      isSignedIn={false}
+      />
+    </GoogleOAuthProvider>
+
    </div>
   );
  }

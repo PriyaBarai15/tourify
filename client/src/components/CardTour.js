@@ -79,7 +79,7 @@ const CardTour = ({
           position="top"
           style={{ maxWidth: "100%", height: "180px" }}
         />
-        <div className="top-left">{name}</div>
+        <div className="top-left p-1 px-2" style={{backgroundColor: "#00000055", borderRadius: "10px"}}>{name}</div>
         <span className="text-start tag-card">
           {tags.map((tag) => (
             <Link to={`/tours/tag/${tag}`}> #{tag}</Link>
@@ -92,18 +92,22 @@ const CardTour = ({
           >
             {!user?.result ? (
               <MDBTooltip title="Please login to like tour" tag="a">
-                <Likes />
+                <div className="px-3">
+                  <Likes />
+                </div>
               </MDBTooltip>
             ) : (
-              <Likes />
+                <div className="px-3">
+                  <Likes />
+                </div>
             )}
           </MDBBtn>
         </span>
         <MDBCardBody>
           <MDBCardTitle className="text-start">{title}</MDBCardTitle>
           <MDBCardText className="text-start">
-            {excerpt(description)}
-            <Link to={`/tour/${_id}`}>Read More</Link>
+            {excerpt(description)}{" "}
+            {description.length > 45 && <Link to={`/tour/${_id}`}>Read More</Link>}
           </MDBCardText>
         </MDBCardBody>
       </MDBCard>

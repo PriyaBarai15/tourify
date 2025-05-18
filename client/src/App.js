@@ -25,7 +25,7 @@ function App() {
   }, []);
   return (
     <BrowserRouter>
-      <div className="App">
+      <div className="App pt-5">
         <Header />
         <ToastContainer />
         <Routes>

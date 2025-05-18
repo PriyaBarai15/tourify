@@ -9,6 +9,8 @@ import {
   MDBNavbarToggler,
   MDBCollapse,
   MDBNavbarBrand,
+  MDBInput,
+  MDBBtn,
 } from "mdb-react-ui-kit";
 import { useSelector, useDispatch } from "react-redux";
 import { setLogout } from "../redux/features/authSlice";
@@ -55,16 +57,7 @@ const Header = () => {
         >
           Tourify
         </MDBNavbarBrand>
-        <MDBNavbarToggler
-          type="button"
-          aria-expanded="false"
-          aria-label="Toogle navigation"
-          onClick={() => setShow(!show)}
-          style={{ color: "#606080" }}
-        >
-          <MDBIcon icon="bars" fas />
-        </MDBNavbarToggler>
-        <MDBCollapse show={show} navbar>
+        <MDBCollapse open={show} navbar >
           <MDBNavbarNav right fullWidth={false} className="mb-2 mb-lg-0">
             {user?.result?._id && (
               <h5 style={{ marginRight: "30px", marginTop: "27px" }}>
@@ -105,20 +98,32 @@ const Header = () => {
                 </MDBNavbarLink>
               </MDBNavbarItem>
             )}
+
           </MDBNavbarNav>
-          <form className="d-flex input-group w-auto" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              className="form-control"
+        </MDBCollapse>
+        <form className="d-flex input-group w-auto m-auto" onSubmit={handleSubmit}>
+          <div className="col-md-12">
+            <MDBInput
               placeholder="Search Tour"
+              type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              className="form-control"
             />
-            <div style={{ marginTop: "5px", marginLeft: "5px" }}>
-              <MDBIcon fas icon="search" />
-            </div>
-          </form>
-        </MDBCollapse>
+          </div>
+          <div style={{ padding: "5px 10px", marginLeft: "5px", backgroundColor: "rgb(96, 96, 128)", borderRadius: "5px", height: "fit-content" }}>
+            <MDBIcon fas icon="search" color="white" />
+          </div>
+        </form>
+        <MDBNavbarToggler
+          type="button"
+          aria-expanded="false"
+          aria-label="Toogle navigation"
+          onClick={() => setShow((s) => !s)}
+          style={{ color: "#606080" }}
+        >
+          <MDBIcon icon="bars" fas />
+        </MDBNavbarToggler>
       </MDBContainer>
     </MDBNavbar>
   );
